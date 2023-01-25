@@ -23,6 +23,7 @@ defaults
         mode    http
         option  httplog
         option  dontlognull
+        option forwardfor
         timeout connect 5000
         timeout client  50000
         timeout server  50000
@@ -34,10 +35,18 @@ defaults
         errorfile 503 /etc/haproxy/errors/503.http
         errorfile 504 /etc/haproxy/errors/504.http
 
-listen www
+frontend www-http
         bind *:80
-        bind *:443 ssl crt /etc/haproxy/certs/www.arvicrin.tech.pem
-        http-request redirect scheme https unless { ssl_fc }
+        redirect scheme https code 301 if !{ ssl_fc }
+        default_backend nodes
+
+frontend www-https
+        bind *:443 ssl crt /etc/haproxy/ssl/www.danielk.space.pem
+        reqadd X-Forwarded-Proto:\ https
+        default_backend nodes
+
+backend nodes
+        redirect scheme https if !{ ssl_fc }
         balance roundrobin
-        server 1231-web-01 54.237.104.123:80 check
-        server 1231-web-02 100.25.201.68:80 check
+        server web-01 35.231.71.122:80 check
+        server web-02 35.196.73.169:80 check
