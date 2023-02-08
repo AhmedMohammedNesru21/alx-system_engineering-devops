@@ -1,23 +1,41 @@
 #!/usr/bin/python3
-# csv exported
+"""
+Script that, using this REST API, for a given employee ID, returns
+information about his/her TODO list progress
+and export data in the JSON format.
+"""
+
 import json
-from requests import get
+import requests
 from sys import argv
 
 
-def jsonWrite(user):
-    """writes to csv"""
-    data = get('https://jsonplaceholder.typicode.com/todos?userId={}'.format(
-        user)).json()
-    name = get('https://jsonplaceholder.typicode.com/users/{}'.format(
-        user)).json().get('username')
-    ordered = []
-    for line in data:
-        ordered.append({"task": line.get('title'), "completed":
-                        line.get('completed'), "username": name})
-    with open('{}.json'.format(user), 'w') as f:
-        json.dump({user: ordered}, f)
-
-
 if __name__ == "__main__":
-    jsonWrite(int(argv[1]))
+
+    sessionReq = requests.Session()
+
+    idEmp = argv[1]
+    idURL = 'https://jsonplaceholder.typicode.com/users/{}/todos'.format(idEmp)
+    nameURL = 'https://jsonplaceholder.typicode.com/users/{}'.format(idEmp)
+
+    employee = sessionReq.get(idURL)
+    employeeName = sessionReq.get(nameURL)
+
+    json_req = employee.json()
+    usr = employeeName.json()['username']
+
+    totalTasks = []
+    updateUser = {}
+
+    for all_Emp in json_req:
+        totalTasks.append(
+            {
+                "task": all_Emp.get('title'),
+                "completed": all_Emp.get('completed'),
+                "username": usr,
+            })
+    updateUser[idEmp] = totalTasks
+
+    file_Json = idEmp + ".json"
+    with open(file_Json, 'w') as f:
+        json.dump(updateUser, f)
